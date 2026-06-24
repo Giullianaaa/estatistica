@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard CR — Pesquisa Acadêmica</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #5f5e5a; margin-bottom: 1.5rem; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: #e8e6df; border-radius: 8px; padding: 12px; text-align: center; }
+  .metric-val { font-size: 22px; font-weight: 500; }
+  .metric-label { font-size: 12px; color: #5f5e5a; margin-top: 2px; }
+  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .nav button { font-size: 13px; padding: 7px 16px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; transition: background 0.15s; }
+  .nav button:hover { background: #e8e6df; }
+  .nav button.active { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .section { display: none; }
+  .section.visible { display: block; }
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.25rem; }
+  .chart-card { background: #fff; border: 1px solid #e0ddd5; border-radius: 12px; padding: 1rem 1.25rem; }
+  .chart-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 11px; color: #5f5e5a; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Pesquisa Acadêmica — Análise de CR</h1>
+  <p class="sub">58 participantes · 4 semestres - Alunas: Ana Giullia, Giulliana e Tais Adrieli - 2214 info</p>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-val">58</div><div class="metric-label">participantes</div></div>
+    <div class="metric"><div class="metric-val">0,76</div><div class="metric-label">CR médio</div></div>
+    <div class="metric"><div class="metric-val">4</div><div class="metric-label">semestres</div></div>
+    <div class="metric"><div class="metric-val">7,3</div><div class="metric-label">impacto médio</div></div>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showTab('semestre')">Distribuição por Semestre</button>
+    <button onclick="showTab('sono')">CR × Sono</button>
+    <button onclick="showTab('tela')">CR × Tela</button>
+    <button onclick="showTab('desloc')">CR × Deslocamento</button>
+    <button onclick="showTab('impacto')">CR × Impacto</button>
+  </div>
+
+  <div id="tab-semestre" class="section visible">
+    <div class="chart-card">
+      <p class="chart-title">Distribuição dos participantes por semestre</p>
+      <div style="position:relative;width:100%;height:300px;">
+        <canvas id="c-semestre"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-sono" class="section">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <p class="chart-title">Quantidade por faixa de CR e horas de sono</p>
+        <div class="legend" id="legend-sono"></div>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-sono"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <p class="chart-title">Proporção de horas de sono por faixa de CR</p>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-sono-pct"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-tela" class="section">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <p class="chart-title">Quantidade por faixa de CR e tempo de tela</p>
+        <div class="legend" id="legend-tela"></div>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-tela"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <p class="chart-title">Proporção de tempo de tela por faixa de CR</p>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-tela-pct"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-desloc" class="section">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <p class="chart-title">Quantidade por faixa de CR e tempo de deslocamento</p>
+        <div class="legend" id="legend-desloc"></div>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-desloc"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <p class="chart-title">Proporção de deslocamento por faixa de CR</p>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="c-desloc-pct"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-impacto" class="section">
+    <div class="chart-card">
+      <p class="chart-title">Impacto percebido médio por faixa de CR</p>
+      <div style="position:relative;width:100%;height:300px;"><canvas id="c-impacto"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = [{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"até 2h","CR":0.93,"Impacto Percebido":7,"Faixa CR":"0,9 – 1,0"},{"Semestre":"6º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.79,"Impacto Percebido":10,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.91,"Impacto Percebido":3,"Faixa CR":"0,9 – 1,0"},{"Semestre":"5º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.83,"Impacto Percebido":4,"Faixa CR":"0,8 – 0,9"},{"Semestre":"5º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.87,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.7,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.47,"Impacto Percebido":10,"Faixa CR":"Abaixo de 0,5"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.71,"Impacto Percebido":5,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.8,"Impacto Percebido":5,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.73,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.69,"Impacto Percebido":3,"Faixa CR":"0,6 – 0,7"},{"Semestre":"5º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.7,"Impacto Percebido":7,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"Mais de 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.71,"Impacto Percebido":6,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"Mais de 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.53,"Impacto Percebido":8,"Faixa CR":"0,5 – 0,6"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.78,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.8,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.71,"Impacto Percebido":9,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.7,"Impacto Percebido":7,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.75,"Impacto Percebido":6,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"mais de 3h","Tempo de Tela":"2h à 4h","CR":0.87,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.72,"Impacto Percebido":7,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.75,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.74,"Impacto Percebido":10,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.69,"Impacto Percebido":6,"Faixa CR":"0,6 – 0,7"},{"Semestre":"6º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.71,"Impacto Percebido":7,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.88,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.83,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.87,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.75,"Impacto Percebido":10,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.85,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"5º Semestre","Horas de Sono":"Mais de 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.81,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"até 2h","CR":0.78,"Impacto Percebido":10,"Faixa CR":"0,7 – 0,8"},{"Semestre":"3º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"2h à 3h","Tempo de Tela":"2h à 4h","CR":0.66,"Impacto Percebido":6,"Faixa CR":"0,6 – 0,7"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"até 2h","CR":0.56,"Impacto Percebido":5,"Faixa CR":"0,5 – 0,6"},{"Semestre":"6º Semestre","Horas de Sono":"Mais de 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.84,"Impacto Percebido":7,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.87,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"2h à 3h","Tempo de Tela":"4h à 6h","CR":0.8,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.86,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"3º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"até 2h","CR":0.73,"Impacto Percebido":7,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.86,"Impacto Percebido":9,"Faixa CR":"0,8 – 0,9"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.82,"Impacto Percebido":9,"Faixa CR":"0,8 – 0,9"},{"Semestre":"3º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.65,"Impacto Percebido":7,"Faixa CR":"0,6 – 0,7"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.81,"Impacto Percebido":7,"Faixa CR":"0,8 – 0,9"},{"Semestre":"3º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.93,"Impacto Percebido":10,"Faixa CR":"0,9 – 1,0"},{"Semestre":"3º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.67,"Impacto Percebido":8,"Faixa CR":"0,6 – 0,7"},{"Semestre":"5º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"2h à 4h","CR":0.73,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"4º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.81,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"},{"Semestre":"4º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"Mais de 6h","CR":0.73,"Impacto Percebido":9,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.65,"Impacto Percebido":10,"Faixa CR":"0,6 – 0,7"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.72,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"4h à 6h","CR":0.86,"Impacto Percebido":7,"Faixa CR":"0,8 – 0,9"},{"Semestre":"6º Semestre","Horas de Sono":"Mais de 8 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"Mais de 6h","CR":0.52,"Impacto Percebido":5,"Faixa CR":"0,5 – 0,6"},{"Semestre":"5º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"2h à 3h","Tempo de Tela":"Mais de 6h","CR":0.83,"Impacto Percebido":10,"Faixa CR":"0,8 – 0,9"},{"Semestre":"3º Semestre","Horas de Sono":"7 à 8 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"até 2h","CR":0.74,"Impacto Percebido":3,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"1h à 2h","Tempo de Tela":"até 2h","CR":0.71,"Impacto Percebido":9,"Faixa CR":"0,7 – 0,8"},{"Semestre":"4º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"4h à 6h","CR":0.79,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"5º Semestre","Horas de Sono":"menos de 6 horas","Tempo de Deslocamento":"2h à 3h","Tempo de Tela":"Mais de 6h","CR":0.78,"Impacto Percebido":8,"Faixa CR":"0,7 – 0,8"},{"Semestre":"6º Semestre","Horas de Sono":"6 à 7 horas","Tempo de Deslocamento":"até 1 hora","Tempo de Tela":"2h à 4h","CR":0.89,"Impacto Percebido":8,"Faixa CR":"0,8 – 0,9"}];
+
+const CR_ORDER = ["Abaixo de 0,5","0,5 – 0,6","0,6 – 0,7","0,7 – 0,8","0,8 – 0,9","0,9 – 1,0"];
+
+function countBy(field, cats) {
+  const map = {};
+  CR_ORDER.forEach(cr => { map[cr] = {}; cats.forEach(c => map[cr][c] = 0); });
+  DATA.forEach(d => { if (map[d['Faixa CR']]) map[d['Faixa CR']][d[field]]++; });
+  return map;
+}
+
+function makeStacked(canvasId, field, cats, colors, pct) {
+  const map = countBy(field, cats);
+  new Chart(document.getElementById(canvasId), {
+    type: 'bar',
+    data: {
+      labels: CR_ORDER,
+      datasets: cats.map((cat, i) => ({
+        label: cat,
+        data: CR_ORDER.map(cr => {
+          if (!pct) return map[cr][cat];
+          const tot = cats.reduce((s, c) => s + map[cr][c], 0);
+          return tot ? Math.round(map[cr][cat] / tot * 100) : 0;
+        }),
+        backgroundColor: colors[i % colors.length],
+        borderWidth: 0,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}${pct ? '%' : ''}` } } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#888780', font: { size: 11 } }, grid: { display: false } },
+        y: { stacked: true, ticks: { color: '#888780', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.06)' }, max: pct ? 100 : undefined }
+      }
+    }
+  });
+}
+
+function makeLegend(id, cats, colors) {
+  document.getElementById(id).innerHTML = cats.map((c, i) =>
+    `<span><span class="legend-sq" style="background:${colors[i % colors.length]}"></span>${c}</span>`).join('');
+}
+
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.getElementById('tab-' + name).classList.add('visible');
+  const tabs = ['semestre', 'sono', 'tela', 'desloc', 'impacto'];
+  document.querySelectorAll('.nav button').forEach((b, i) => b.classList.toggle('active', tabs[i] === name));
+}
+
+const semOrder = ['3º Semestre','4º Semestre','5º Semestre','6º Semestre'];
+const semCounts = {};
+DATA.forEach(d => semCounts[d['Semestre']] = (semCounts[d['Semestre']] || 0) + 1);
+new Chart(document.getElementById('c-semestre'), {
+  type: 'bar',
+  data: { labels: semOrder, datasets: [{ label: 'Participantes', data: semOrder.map(s => semCounts[s] || 0), backgroundColor: ['#9FE1CB','#CECBF6','#FAC775','#378ADD'], borderWidth: 0 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888780' }, grid: { display: false } }, y: { ticks: { color: '#888780' }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
+});
+
+const sonoOrder = ['menos de 6 horas','6 à 7 horas','7 à 8 horas','Mais de 8 horas'];
+const sonoColors = ['#E24B4A','#FAC775','#1D9E75','#378ADD'];
+makeLegend('legend-sono', sonoOrder, sonoColors);
+makeStacked('c-sono', 'Horas de Sono', sonoOrder, sonoColors, false);
+makeStacked('c-sono-pct', 'Horas de Sono', sonoOrder, sonoColors, true);
+
+const telaOrder = ['até 2h','2h à 4h','4h à 6h','Mais de 6h'];
+const telaColors = ['#1D9E75','#378ADD','#7F77DD','#D85A30'];
+makeLegend('legend-tela', telaOrder, telaColors);
+makeStacked('c-tela', 'Tempo de Tela', telaOrder, telaColors, false);
+makeStacked('c-tela-pct', 'Tempo de Tela', telaOrder, telaColors, true);
+
+const deslocOrder = ['até 1 hora','1h à 2h','2h à 3h','mais de 3h'];
+const deslocColors = ['#1D9E75','#378ADD','#BA7517','#E24B4A'];
+makeLegend('legend-desloc', deslocOrder, deslocColors);
+makeStacked('c-desloc', 'Tempo de Deslocamento', deslocOrder, deslocColors, false);
+makeStacked('c-desloc-pct', 'Tempo de Deslocamento', deslocOrder, deslocColors, true);
+
+const impMap = {}, impCount = {};
+DATA.forEach(d => { impMap[d['Faixa CR']] = (impMap[d['Faixa CR']] || 0) + d['Impacto Percebido']; impCount[d['Faixa CR']] = (impCount[d['Faixa CR']] || 0) + 1; });
+new Chart(document.getElementById('c-impacto'), {
+  type: 'bar',
+  data: { labels: CR_ORDER, datasets: [{ label: 'Impacto médio', data: CR_ORDER.map(cr => impCount[cr] ? parseFloat((impMap[cr] / impCount[cr]).toFixed(1)) : 0), backgroundColor: ['#B5D4F4','#85B7EB','#378ADD','#185FA5','#0C447C','#042C53'], borderWidth: 0 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888780' }, grid: { display: false } }, y: { min: 0, max: 10, ticks: { color: '#888780' }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
+});
+</script>
+</body>
+</html>
